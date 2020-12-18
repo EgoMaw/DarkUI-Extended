@@ -2,6 +2,7 @@
 using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace DarkUI.Controls
@@ -40,11 +41,33 @@ namespace DarkUI.Controls
             var g = e.Graphics;
             var rect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
 
-            var size = Consts.CheckBoxSize;
+            const int size = Consts.CheckBoxSize;
 
             var textColor = Colors.LightText;
             var borderColor = Colors.LightText;
             var fillColor = Colors.LightestBackground;
+
+            Rectangle boxRect, checkBoxRect, labelRect;
+            StringAlignment labelAlignment;
+
+            switch (CheckAlign)
+            {
+                case ContentAlignment.MiddleRight:
+                    boxRect = new Rectangle(rect.Width - size - 2, rect.Height / 2 - size / 2, size, size);
+                    checkBoxRect = new Rectangle(rect.Width - size, rect.Height / 2 - (size - 4) / 2, size - 3,
+                        size - 3);
+                    labelRect = new Rectangle(0, 0, rect.Width - size - 5, rect.Height);
+                    labelAlignment = StringAlignment.Far;
+                    break;
+
+                case ContentAlignment.MiddleLeft:
+                default:
+                    boxRect = new Rectangle(0, rect.Height / 2 - size / 2, size, size);
+                    checkBoxRect = new Rectangle(2, rect.Height / 2 - (size - 4) / 2, size - 3, size - 3);
+                    labelRect = new Rectangle(size + 4, 0, rect.Width - size, rect.Height);
+                    labelAlignment = StringAlignment.Near;
+                    break;
+            }
 
             if (Enabled)
             {
@@ -54,15 +77,16 @@ namespace DarkUI.Controls
                     fillColor = Colors.BlueSelection;
                 }
 
-                if (_controlState == DarkControlState.Hover)
+                switch (_controlState)
                 {
-                    borderColor = Colors.BlueHighlight;
-                    fillColor = Colors.BlueSelection;
-                }
-                else if (_controlState == DarkControlState.Pressed)
-                {
-                    borderColor = Colors.GreyHighlight;
-                    fillColor = Colors.GreySelection;
+                    case DarkControlState.Hover:
+                        borderColor = Colors.BlueHighlight;
+                        fillColor = Colors.BlueSelection;
+                        break;
+                    case DarkControlState.Pressed:
+                        borderColor = Colors.GreyHighlight;
+                        fillColor = Colors.GreySelection;
+                        break;
                 }
             }
             else
@@ -79,15 +103,36 @@ namespace DarkUI.Controls
 
             using (var p = new Pen(borderColor))
             {
-                var boxRect = new Rectangle(0, rect.Height / 2 - size / 2, size, size);
                 g.DrawRectangle(p, boxRect);
             }
 
-            if (Checked)
+            switch (CheckState)
             {
-                using var b = new SolidBrush(fillColor);
-                var boxRect = new Rectangle(2, rect.Height / 2 - (size - 4) / 2, size - 3, size - 3);
-                g.FillRectangle(b, boxRect);
+                case CheckState.Checked:
+                    var checkBoxRectCross = checkBoxRect;
+                    checkBoxRectCross.Inflate(new Size(-1, -1));
+                    using (var p = new Pen(fillColor, 2) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    {
+                        g.SmoothingMode = SmoothingMode.HighQuality;
+                        g.DrawLines(p, new[]
+                        {
+                            new Point(checkBoxRectCross.Left - 1,
+                                checkBoxRectCross.Bottom - checkBoxRectCross.Height / 2 - 1),
+                            new Point(checkBoxRectCross.Left + checkBoxRectCross.Width / 2 - 1,
+                                checkBoxRectCross.Bottom - 1),
+                            new Point(checkBoxRectCross.Right - 1, checkBoxRectCross.Top)
+                        });
+                        g.SmoothingMode = SmoothingMode.Default;
+                    }
+
+                    break;
+                case CheckState.Indeterminate:
+                    using (var b = new SolidBrush(fillColor))
+                    {
+                        g.FillRectangle(b, checkBoxRect);
+                    }
+
+                    break;
             }
 
             using (var b = new SolidBrush(textColor))
@@ -95,11 +140,10 @@ namespace DarkUI.Controls
                 var stringFormat = new StringFormat
                 {
                     LineAlignment = StringAlignment.Center,
-                    Alignment = StringAlignment.Near
+                    Alignment = labelAlignment
                 };
 
-                var modRect = new Rectangle(size + 4, 0, rect.Width - size, rect.Height);
-                g.DrawString(Text, Font, b, modRect, stringFormat);
+                g.DrawString(Text, Font, b, labelRect, stringFormat);
             }
         }
 
