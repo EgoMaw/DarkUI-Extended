@@ -1,6 +1,6 @@
 <img src="http://www.darkui.com/images/logo-888.png">
 
-## DarkUI-Extended
+## DarkUI-Extended - ⚠️ NO LONGER MAINTAINED ⚠️
 Dark themed control and docking library for .NET WinForms.
 
 ### About DarkUI (Original)
